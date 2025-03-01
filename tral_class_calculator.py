@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import os
 
 app = Flask(__name__)
 
@@ -117,5 +118,7 @@ def calculate_fee():
         "payment_schedule": payment_schedule
     })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# 🚀 Corrected Run Block for Deployment 🚀
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Use PORT from Railway, default to 5000
+    app.run(host="0.0.0.0", port=port)
