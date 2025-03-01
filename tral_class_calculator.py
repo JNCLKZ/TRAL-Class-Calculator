@@ -120,5 +120,5 @@ def calculate_fee():
 
 # 🚀 Corrected Run Block for Deployment 🚀
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use PORT from Railway, default to 5000
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 5000))  # Use PORT from Render
+    app.run(host="0.0.0.0", port=port)  # Bind to all network interfaces
