@@ -94,8 +94,9 @@ def calculate_fee():
 
     # Final cost calculations
     monthly_total = monthly_cost_before_discount - total_discount
-    term_total = (monthly_total / 3) * 12  
-    annual_total = (term_total * 3 * 3) / 12  
+    term_total = monthly_total * 3  # ✅ Each term is 3 months
+    annual_total = term_total * 3  # ✅ 3 terms in a year
+    monthly_installment = annual_total / 12  # ✅ Monthly breakdown over 12 months
 
     # Add agency fees
     if include_agency:
@@ -112,8 +113,9 @@ def calculate_fee():
 
     return jsonify({
         "monthly_total": round(monthly_total, 2),
-        "term_total": round(term_total, 2),
-        "annual_total": round(annual_total, 2),
+        "term_total": round(term_total, 2),  # ✅ Now correctly calculated
+        "annual_total": round(annual_total, 2),  # ✅ Now correctly calculated
+        "monthly_installment": round(monthly_installment, 2),  # ✅ Now included
         "discretionary_discount_applied": round(discretionary_discount_amount, 2),
         "sibling_discount_applied": round(sibling_discount_amount, 2) if include_sibling_discount else 0,
         "class_discounts": class_discount_breakdown,  # ✅ Shows discounts applied to each class
