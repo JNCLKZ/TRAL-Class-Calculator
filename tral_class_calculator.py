@@ -120,5 +120,5 @@ def calculate_fee():
 
 # 🚀 Corrected Run Block for Deployment 🚀
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use PORT from Render
-    app.run(host="0.0.0.0", port=port)  # Bind to all network interfaces
+    port = int(os.environ.get("PORT", 5000))  # Get port from Render
+    app.run(host="0.0.0.0", port=port, debug=False)  # Ensure Flask binds to all interfaces
