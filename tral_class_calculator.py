@@ -79,11 +79,15 @@ def calculate_fee():
     
     total_discount = 0
     
-    # Apply class count discount (cheapest class gets the discount)
-    for student_classes, discount_rate in student_discounts:
-        if len(student_classes) > 1:
-            cheapest_class = min(student_classes, key=lambda cls: class_fees_flat.get(cls, 0))
-            total_discount += class_fees_flat.get(cheapest_class, 0) * discount_rate
+    # ✅ Ensure discounts apply to a single student with multiple classes
+    sibling_discount_amount = 0
+    if include_sibling_discount and len(students) > 1:
+    sibling_discount_amount = total_discount
+    elif len(students) == 1 and len(students[0]["classes"]) > 1:
+    # ✅ Apply discount even if only one student has multiple classes
+    cheapest_class = min(students[0]["classes"], key=lambda cls: class_fees_flat.get(cls, 0))
+    sibling_discount_amount = class_fees_flat.get(cheapest_class, 0) * 0.05  # 5% discount
+
     
     # ✅ Apply sibling discount **only if selected**
     sibling_discount_amount = 0
