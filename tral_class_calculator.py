@@ -57,10 +57,10 @@ def calculate_fee():
     discretionary_discount = data.get("discretionary_discount", 0)  # Manual override discount
     include_agency = data.get("include_agency", False)  # Include standard agency fee
     include_elite_agency = data.get("include_elite_agency", False)  # Include elite agency fee
+    include_sibling_discount = data.get("include_sibling_discount", False)  # ✅ New sibling discount flag
     
     all_classes = []
     student_discounts = []
-    sibling_classes = []
     
     # Flatten the CLASS_FEES dictionary for easier access
     class_fees_flat = {class_name: fee for group in CLASS_FEES.values() for class_name, fee in group.items()}
@@ -68,7 +68,6 @@ def calculate_fee():
     for student in students:
         student_classes = student.get("classes", [])
         all_classes.extend(student_classes)
-        sibling_classes.append(student_classes)
         
         # Determine discount based on number of classes
         num_classes = len(student_classes)
@@ -80,19 +79,23 @@ def calculate_fee():
     
     total_discount = 0
     
-    # Apply single discount based on total class count (cheapest class gets the discount)
+    # Apply class count discount (cheapest class gets the discount)
     for student_classes, discount_rate in student_discounts:
         if len(student_classes) > 1:
-            # Find the cheapest class and apply the discount
             cheapest_class = min(student_classes, key=lambda cls: class_fees_flat.get(cls, 0))
             total_discount += class_fees_flat.get(cheapest_class, 0) * discount_rate
+    
+    # ✅ Apply sibling discount **only if selected**
+    sibling_discount_amount = 0
+    if include_sibling_discount and len(students) > 1:
+        sibling_discount_amount = total_discount  # Apply calculated sibling discount
     
     # Apply discretionary discount (manual override)
     discretionary_discount_amount = monthly_cost_before_discount * (discretionary_discount / 100)
     total_discount += discretionary_discount_amount
     
     # Calculate final costs
-    monthly_total = monthly_cost_before_discount - total_discount
+    monthly_total = monthly_cost_before_discount - total_discount - sibling_discount_amount
     term_total = (monthly_total / 3) * 12  # Adjusted for a 12-week term
     
     # Annual payment: Total term cost x 3 x 3, then divided by 12 months
@@ -116,7 +119,7 @@ def calculate_fee():
         "term_total": round(term_total, 2),
         "annual_total": round(annual_total, 2),
         "discretionary_discount_applied": round(discretionary_discount_amount, 2),
-        "sibling_discount_applied": round(total_discount - discretionary_discount_amount, 2),
+        "sibling_discount_applied": round(sibling_discount_amount, 2) if include_sibling_discount else 0,  # ✅ Only show discount if applied
         "payment_schedule": payment_schedule
     })
 
