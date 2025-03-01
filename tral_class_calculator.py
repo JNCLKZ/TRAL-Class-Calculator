@@ -1,128 +1,163 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # ✅ Import CORS
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAL Class Fee Calculator</title>
+    <style>
+        #calculator-container { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: auto; 
+            padding: 20px; 
+        }
+        #calculator-container h2, #calculator-container h3 { margin-bottom: 10px; }
+        #calculator-container form, #result-container { 
+            border: 1px solid #ccc; 
+            padding: 15px; 
+            border-radius: 8px; 
+            background: #f9f9f9; 
+        }
+        .student { 
+            margin-bottom: 10px; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            background: #fff; 
+        }
+        #calculator-container label { font-weight: bold; display: block; margin-top: 8px; }
+        #calculator-container select, #calculator-container input { width: 100%; padding: 5px; margin-top: 5px; }
+        #calculator-container button { 
+            margin-top: 10px; 
+            padding: 8px; 
+            border: none; 
+            background: #007BFF; 
+            color: white; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        #calculator-container button.remove-student { background: #DC3545; }
+        #calculator-container button.clear-results { background: #6c757d; }
+        #calculator-container ul { padding-left: 15px; }
+        .checkbox-container, .input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .checkbox-container label, .input-container label {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
 
-app = Flask(__name__)
-CORS(app)  # ✅ Enable CORS for all routes
+<div id="calculator-container">
+    <h2>TRAL Class Fee Calculator</h2>
+    
+    <form id="classCalculatorForm">
+        <h3>Select Classes for Each Student</h3>
+        
+        <div id="students-container">
+            <div class="student">
+                <label>Student Name:</label>
+                <input type="text" class="student-name" placeholder="Enter name" required>
 
-# Define class fees with group categories
-CLASS_FEES = {
-    "Sow & Grow Nurture": {
-        "Introduction to The Arts": 50  # Nurture class
-    },
-    "Sow & Grow Progression": {
-        "Breakdance Elites": 80,
-        "Street Dance": 50,
-        "Junior Elites": 60,
-        "Musical Theatre + Commercial": 50,
-        "Body Conditioning": 50,
-        "Ballet, Jazz and Contemporary": 40,
-        "Junior Industry Workshops": 15
-    },
-    "Inters & Teens": {
-        "Contemporary": 70,
-        "Body Conditioning": 50,
-        "Ballet": 40,
-        "Commercial Street (45 mins)": 40,
-        "Drama and Musical Theatre": 70,
-        "Inter & Senior Industry Workshop": 25
-    },
-    "Elite Inters": {
-        "Elite Training": 80
-    }
-}
+                <label>Select Classes:</label>
+                <select multiple class="student-classes">
+                    <option value="Ballet">Ballet (£40)</option>
+                    <option value="Contemporary">Contemporary (£70)</option>
+                    <option value="Breakdance Elites">Breakdance Elites (£80)</option>
+                    <option value="Body Conditioning">Body Conditioning (£50)</option>
+                    <option value="Street Dance">Street Dance (£50)</option>
+                    <option value="Junior Elites">Junior Elites (£60)</option>
+                    <option value="Musical Theatre + Commercial">Musical Theatre + Commercial (£50)</option>
+                    <option value="Junior Industry Workshops">Junior Industry Workshops (£15)</option>
+                    <option value="Drama and Musical Theatre">Drama and Musical Theatre (£70)</option>
+                    <option value="Commercial Street (45 mins)">Commercial Street (45 mins) (£40)</option>
+                </select>
 
-# Discount structure based on class count
-CLASS_DISCOUNTS = {
-    2: 0.05,  # 5% discount for second class
-    3: 0.10,  # 10% discount for third class
-    4: 0.15   # 15% discount for fourth class
-}
+                <button type="button" class="remove-student">Remove</button>
+            </div>
+        </div>
 
-# Sibling discount rules
-SIBLING_DISCOUNT = 0.05  # 5% discount per class when siblings enroll
+        <div class="checkbox-container">
+            <input type="checkbox" id="includeSiblingDiscount">
+            <label for="includeSiblingDiscount">Apply Sibling Discount</label>
+        </div>
+        
+        <div class="checkbox-container">
+            <input type="checkbox" id="includeAgency">
+            <label for="includeAgency">Include Standard Agency Fee (£25/month)</label>
+        </div>
 
-# Agency fees
-AGENCY_FEE = 25  
-ELITE_AGENCY_FEE = 25  
+        <div class="checkbox-container">
+            <input type="checkbox" id="includeEliteAgency">
+            <label for="includeEliteAgency">Include Elite Agency Fee (£25/month)</label>
+        </div>
 
-@app.route('/')
-def home():
-    return "Welcome to The Rose Arts London Class Calculator API!"
+        <div class="input-container">
+            <label for="discretionaryDiscount">Discretionary Discount (%):</label>
+            <input type="number" id="discretionaryDiscount" min="0" max="100" value="0">
+        </div>
 
-@app.route('/calculate_fee', methods=['POST'])
-def calculate_fee():
-    data = request.json
-    students = data.get("students", [])
-    discretionary_discount = data.get("discretionary_discount", 0)
-    include_agency = data.get("include_agency", False)
-    include_elite_agency = data.get("include_elite_agency", False)
-    include_sibling_discount = data.get("include_sibling_discount", False)
+        <button type="button" id="addStudent">+ Add Another Student</button>
+        <button type="button" id="calculateFees">Calculate Fees</button>
+        <button type="button" id="clearResults" class="clear-results">Clear Results</button>
+    </form>
 
-    class_fees_flat = {class_name: fee for group in CLASS_FEES.values() for class_name, fee in group.items()}
-    all_classes = []
-    student_discounts = []
-    class_discount_breakdown = []
+    <h3>Results:</h3>
+    <div id="result-container">
+        <div id="result"></div>
+    </div>
+</div>
 
-    # Calculate class costs before discounts
-    for student in students:
-        student_classes = student.get("classes", [])
-        all_classes.extend(student_classes)
+<script>
+    document.getElementById("calculateFees").addEventListener("click", async function () {
+        let students = [];
 
-        # Apply class count discount
-        num_classes = len(student_classes)
-        discount_rate = CLASS_DISCOUNTS.get(num_classes, 0)
+        document.querySelectorAll(".student").forEach(studentDiv => {
+            let name = studentDiv.querySelector(".student-name").value;
+            let classes = Array.from(studentDiv.querySelector(".student-classes").selectedOptions).map(option => option.value);
 
-        if num_classes > 1:
-            cheapest_class = min(student_classes, key=lambda cls: class_fees_flat.get(cls, 0))
-            discount_amount = class_fees_flat.get(cheapest_class, 0) * discount_rate
-            student_discounts.append(discount_amount)
-            class_discount_breakdown.append({"class": cheapest_class, "discount": round(discount_amount, 2)})
+            if (name && classes.length > 0) {
+                students.push({ name: name, classes: classes });
+            }
+        });
 
-    monthly_cost_before_discount = sum(class_fees_flat.get(cls, 0) for cls in all_classes)
-    total_discount = sum(student_discounts)
+        if (students.length === 0) {
+            document.getElementById("result").textContent = "Error: Please add at least one student and select classes.";
+            return;
+        }
 
-    # ✅ Apply sibling discount **only if selected** and **if multiple students exist**
-    sibling_discount_amount = 0
-    if include_sibling_discount and len(students) > 1:
-        sibling_discount_amount = sum(class_fees_flat.get(cls, 0) * SIBLING_DISCOUNT for cls in all_classes)
-        total_discount += sibling_discount_amount
+        let includeSiblingDiscount = document.getElementById("includeSiblingDiscount").checked;
+        let includeAgency = document.getElementById("includeAgency").checked;
+        let includeEliteAgency = document.getElementById("includeEliteAgency").checked;
+        let discretionaryDiscount = parseFloat(document.getElementById("discretionaryDiscount").value) || 0;
 
-    # Apply discretionary discount
-    discretionary_discount_amount = monthly_cost_before_discount * (discretionary_discount / 100)
-    total_discount += discretionary_discount_amount
+        try {
+            const response = await fetch("https://tral-class-calculator-27ku.onrender.com/calculate_fee", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    students: students, 
+                    include_sibling_discount: includeSiblingDiscount,
+                    include_agency: includeAgency,
+                    include_elite_agency: includeEliteAgency,
+                    discretionary_discount: discretionaryDiscount 
+                })
+            });
 
-    # Final cost calculations
-    monthly_total = monthly_cost_before_discount - total_discount
-    term_total = monthly_total * 3  # ✅ Each term is 3 months
-    annual_total = term_total * 3  # ✅ 3 terms in a year
-    monthly_installment = annual_total / 12  # ✅ Monthly breakdown over 12 months
-
-    # Add agency fees
-    if include_agency:
-        monthly_total += AGENCY_FEE
-    if include_elite_agency:
-        monthly_total += ELITE_AGENCY_FEE
-
-    # Payment schedule
-    payment_schedule = {
-        "Spring": ["Jan", "Feb", "March"],
-        "Summer": ["May", "June", "July"],
-        "Autumn": ["Sept", "Oct", "Nov", "Dec"]
-    }
-
-    return jsonify({
-        "monthly_total": round(monthly_total, 2),
-        "term_total": round(term_total, 2),  # ✅ Now correctly calculated
-        "annual_total": round(annual_total, 2),  # ✅ Now correctly calculated
-        "monthly_installment": round(monthly_installment, 2),  # ✅ Now included
-        "discretionary_discount_applied": round(discretionary_discount_amount, 2),
-        "sibling_discount_applied": round(sibling_discount_amount, 2) if include_sibling_discount else 0,
-        "class_discounts": class_discount_breakdown,  # ✅ Shows discounts applied to each class
-        "payment_schedule": payment_schedule
-    })
-
-# 🚀 Corrected Run Block for Deployment 🚀
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+            const result = await response.json();
+            document.getElementById("result").innerHTML = `<h3>Payment Breakdown:</h3>
+                ${students.map(student => `<p><strong>${student.name}:</strong> ${student.classes.join(", ")}</p>`).join("")}
+                <p><strong>Annual Total:</strong> £${result.annual_total}</p>
+                <p><strong>Term Total:</strong> £${result.term_total}</p>
+                <p><strong>Monthly Total:</strong> £${result.monthly_total}</p>`;
+        } catch (error) {
+            document.getElementById("result").textContent = "Error: " + error.message;
+        }
+    });
+</script>
+</body>
+</html>
