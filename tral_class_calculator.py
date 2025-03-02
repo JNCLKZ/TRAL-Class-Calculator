@@ -84,23 +84,32 @@ def calculate_fee():
 
     # ✅ Apply sibling discount if selected and multiple students exist
     if include_sibling_discount and len(students) > 1:
-        sibling_discount_amount = sum(class_fees_flat.get(cls, 0) * SIBLING_DISCOUNT for cls in all_classes)
-        total_discount += sibling_discount_amount
+        for student in students[1:]:  # Apply discount to the second+ students
+            if student["classes"]:
+                cheapest_class = min(student["classes"], key=lambda cls: class_fees_flat.get(cls, 0))
+                sibling_discount_amount += class_fees_flat.get(cheapest_class, 0) * SIBLING_DISCOUNT
 
-    # ✅ Apply discretionary discount
-    discretionary_discount_amount = (monthly_cost_before_discount - total_discount) * (discretionary_discount / 100)
+    total_discount += sibling_discount_amount
+
+    # ✅ Apply discretionary discount before other discounts
+    discretionary_discount_amount = monthly_cost_before_discount * (discretionary_discount / 100)
     total_discount += discretionary_discount_amount
 
     # Final cost calculations
     monthly_total = monthly_cost_before_discount - total_discount
     term_total = monthly_total * 3  
-    annual_total = term_total * 3 / 12  
+    annual_total = term_total * 3  # ✅ Fixed calculation
 
-    # Add agency fees
+    # ✅ Ensure agency fees are included in all calculations
     if include_agency:
         monthly_total += AGENCY_FEE
+        term_total += AGENCY_FEE * 3
+        annual_total += AGENCY_FEE * 12
+
     if include_elite_agency:
         monthly_total += ELITE_AGENCY_FEE
+        term_total += ELITE_AGENCY_FEE * 3
+        annual_total += ELITE_AGENCY_FEE * 12
 
     # Payment schedule
     payment_schedule = {
