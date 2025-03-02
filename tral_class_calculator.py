@@ -96,9 +96,9 @@ def calculate_fee():
     total_discount += discretionary_discount_amount
 
     # Final cost calculations
-    monthly_total = monthly_cost_before_discount - total_discount
+    monthly_total = (monthly_cost_before_discount - total_discount)
     term_total = monthly_total * 3  
-    annual_total = term_total * 3  # ✅ Fixed calculation
+    annual_total = term_total * 3  
 
     # ✅ Ensure agency fees are included in all calculations
     if include_agency:
@@ -111,6 +111,17 @@ def calculate_fee():
         term_total += ELITE_AGENCY_FEE * 3
         annual_total += ELITE_AGENCY_FEE * 12
 
+    # ✅ Apply a 5% upfront discount if paying annually
+    annual_total_discounted = annual_total * 0.95  
+
+    # Monthly breakdown (12 months)
+    monthly_breakdown = {
+        "January": round(monthly_total, 2), "February": round(monthly_total, 2), "March": round(monthly_total, 2),
+        "April": round(monthly_total, 2), "May": round(monthly_total, 2), "June": round(monthly_total, 2),
+        "July": round(monthly_total, 2), "August": round(monthly_total, 2), "September": round(monthly_total, 2),
+        "October": round(monthly_total, 2), "November": round(monthly_total, 2), "December": round(monthly_total, 2)
+    }
+
     # Payment schedule
     payment_schedule = {
         "Spring": ["Jan", "Feb", "March"],
@@ -122,6 +133,8 @@ def calculate_fee():
         "monthly_total": round(monthly_total, 2),
         "term_total": round(term_total, 2),
         "annual_total": round(annual_total, 2),
+        "annual_total_discounted": round(annual_total_discounted, 2),  # ✅ Annual cost with upfront discount
+        "monthly_breakdown": monthly_breakdown,  # ✅ Full monthly cost breakdown
         "discretionary_discount_applied": round(discretionary_discount_amount, 2),
         "sibling_discount_applied": round(sibling_discount_amount, 2) if include_sibling_discount else 0,
         "class_discounts": class_discount_breakdown,  
